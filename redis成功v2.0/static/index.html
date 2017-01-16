@@ -1,0 +1,276 @@
+<!doctype html>
+<html>
+<head>
+<title>redis改进工具</title>
+<link rel="stylesheet" href="components/bootstrap/dist/css/bootstrap.css">
+<link rel="stylesheet" href="styles/room.css">
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript" src="components/jquery/dist/jquery.js"></script>
+<script type="text/javascript" src="components/bootstrap/dist/js/bootstrap.js"></script>
+<script type="text/javascript" src="components/angular/angular.js"></script>
+</head>
+<body>
+<div ng-app="app" ng-controller="ctrl">
+<div class="navbar navbar-inverse navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header"> <a class="navbar-brand" href="#">
+      <div class="center-block">redis改进工具</div>
+      </a> </div>
+  </div>
+</div>
+<div class="container" style="margin-top:100px;">
+  <div class="form-group">
+    <div class="col-md-6">
+      <div class="panel panel-default room">
+        <div class="panel-heading room-header">数据保障模块&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+          <div class="btn-group">
+            <button class="btn btn-default" type="button">开启</button>
+            <button class="btn btn-default" type="button">关闭</button>
+          </div>
+        </div>
+        <div class="panel-body room-content">
+        <div ng-repeat="per in pers track by $index">&nbsp&nbsp&nbsp&nbsp持久化检查&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+{{per}}
+        		  
+		  </div>
+          <div ng-model="snap">&nbsp&nbsp&nbsp&nbsp快照状态&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{{snap}}
+		  </div>
+          <div ng-model="aof">&nbsp&nbsp&nbsp&nbspAOF状态&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{{aof}}
+		  </div>
+          <div ng-model="persist">&nbsp&nbsp&nbsp&nbsp持久化状态&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{{persist}}
+		  </div>
+         <div style="position:relative; height:400px; overflow-y:auto">
+            <div class="list-group messages" auto-scroll-to-bottom>
+				<div class="list-group-item message"
+			  ng-repeat="baozhang in baozhangs track by $index"> log：{{baozhang}} </div>
+	
+            </div>
+		  </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="panel panel-default room">
+        <div class="panel-heading room-header">循环拦截模块&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+          <div class="btn-group">
+            <button class="btn btn-default" type="button">开启</button>
+            <button class="btn btn-default" type="button">关闭</button>
+          </div>
+        </div>
+        <div class="panel-body room-content">
+          <div>循环原因:</div>
+          <div ng-repeat="xhreason in xhreasons track by $index">{{xhreason}}</div>
+          <div>状态修改:</div>
+          <div ng-repeat="statusxg in statusxgs track by $index">{{statusxg}}</div>
+          <div style="position:relative; height:400px; overflow-y:auto">
+            <div class="list-group messages" auto-scroll-to-bottom>
+		<div class="list-group-item message"
+	        ng-repeat="message in messages track by $index"> log：{{message}} </div>
+            </div>
+		  </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+
+<script type="text/javascript">
+        //创建模型
+        var app = angular.module('app',[]);
+        //创建控制器
+        app.controller('ctrl',function($scope){
+        var Msgs = [];
+        var Bzs = [];
+        var Pers = [];
+        var Snaps = [];
+        var Aofs = [];
+        var Persists = [];
+        var Xhreasons = [];
+        var Statusxgs = [];
+        var socket = io.connect('/');
+
+        socket.emit('getAllMessages');
+        socket.emit('getAllbaozhangs');
+        socket.emit('getAllpers');
+        socket.emit('getAllsnaps');
+        socket.emit('getAllaofs');
+        socket.emit('getAllpersists');
+        socket.emit('getAllxhreasons');
+        socket.emit('getAllstatusxgs');
+
+        socket.on('connected',function(){
+            console.log('connected:connected to myChat!');
+        });
+
+        socket.on('newClient',function(socket){
+            console.log('newClient:',socket);
+        });
+
+        socket.on('allMessages',function(messages){
+            console.log('allMessages->messages:',messages);
+            Msgs = messages.slice();
+            $scope.$apply(function() {
+                $scope.messages = Msgs;
+            });
+
+        });
+
+        socket.on('allbaozhangs',function(baozhangs){
+            console.log('allbaozhangs->baozhangs:',baozhangs);
+            Bzs = baozhangs.slice();
+            $scope.$apply(function() {
+                $scope.baozhangs = Bzs;
+            });
+
+        });
+
+        socket.on('allpers',function(pers){
+            console.log('allpers->pers:',pers);
+            Pers = pers.slice();
+            $scope.$apply(function() {
+                $scope.pers = Pers;
+            });
+
+        });
+
+        socket.on('allsnaps',function(snaps){
+            console.log('allsnaps->snaps:',snaps);
+            Snaps = snaps;
+            $scope.$apply(function() {
+                $scope.snaps = Snaps;
+            });
+
+        });
+
+        socket.on('allaofs',function(aofs){
+            console.log('allaofs->aofs:',aofs);
+            Aofs = aofs;
+            $scope.$apply(function() {
+                $scope.aofs = Aofs;
+            });
+
+        });
+
+        socket.on('allpersists',function(persists){
+            console.log('allpersists->persists:',persists);
+            Persists = persists;
+            $scope.$apply(function() {
+                $scope.persists = Persists;
+            });
+
+        });
+
+        socket.on('allxhreasons',function(xhreasons){
+            console.log('allxhreasons->xhreasons:',xhreasons);
+            Xhreasons = xhreasons;
+            $scope.$apply(function() {
+                $scope.xhreasons = Xhreasons;
+            });
+
+        });
+
+        socket.on('allstatusxgs',function(statusxgs){
+            console.log('allstatusxgs->statusxgs:',statusxgs);
+            Statusxgs = statusxgs;
+            $scope.$apply(function() {
+                $scope.statusxgs = Statusxgs;
+            });
+
+        });
+
+
+
+        socket.on('newMessage',function(message) {
+            console.log('Get a new message:',message);
+            Msgs.unshift(message);
+            $scope.$apply(function(){
+                $scope.messages = Msgs;
+            });
+        });
+
+        socket.on('newbaozhang',function(baozhang) {
+            console.log('Get a new baozhang:',baozhang);
+            Bzs.unshift(baozhang);
+            $scope.$apply(function(){
+                $scope.baozhangs = Bzs;
+            });
+        });
+
+        socket.on('newsnap',function(snap) {
+            console.log('Get a new snap:',snap);
+            Snaps.push(snap);
+            $scope.$apply(function(){
+                $scope.snap = snap;
+            });
+        });
+        socket.on('newaof',function(aof) {
+            console.log('Get a new aof:',aof);
+            Aofs.push(aof);
+            $scope.$apply(function(){
+                $scope.aof = aof;
+            });
+        });
+        socket.on('newpersist',function(persist) {
+            console.log('Get a new persist:',persist);
+            Persists.push(persist);
+            $scope.$apply(function(){
+                $scope.persist = persist;
+            });
+        });
+        socket.on('newxhreason',function(xhreason) {
+            console.log('Get a new xhreason:',xhreason);
+            Xhreasons.push(xhreason);
+            $scope.$apply(function(){
+                $scope.xhreason = xhreason;
+            });
+        });
+        socket.on('newstatusxg',function(statusxg) {
+            console.log('Get a new statusxg:',statusxg);
+            Statusxgs.push(statusxg);
+            $scope.$apply(function(){
+                $scope.statusxg = statusxg;
+            });
+        });
+
+        //$scope.toggle1 = function(){
+            //socket.emit('addpersistence_button',true);
+        //};
+        //$scope.toggle2 = function(){
+            //socket.emit('addpersistence_button',false);
+        //};
+
+        });
+
+        app.directive('autoScrollToBottom',function() {
+            return {
+                link:function(scope,element,attrs) {
+                    scope.$watch(
+                        function() {
+                            return element.children().length;
+                        },
+                        function() {
+                            element.animate({
+                                scrollTop:element.prop('scrollHeight')
+                            },1000);
+                        }
+                    );
+                }
+            };
+        });
+app.directive("scrollBottom", function(){
+    return {
+        link: function(scope, element, attr){
+            var $id= $("#" + attr.scrollBottom);
+            $(element).on("click", function(){
+                $id.scrollTop($id[0].scrollHeight);
+            });
+        }
+    }
+});
+    </script>
+
+
+</body>
+</html>
